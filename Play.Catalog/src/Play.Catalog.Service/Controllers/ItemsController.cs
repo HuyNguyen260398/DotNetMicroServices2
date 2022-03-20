@@ -22,7 +22,7 @@ namespace Play.Catalog.Service.Controllers
         public ItemDto GetById(Guid id) => _items.Find(i => i.Id == id);
 
         [HttpPost]
-        public ActionResult<ItemDto> Create(CreateItemDto dto)
+        public IActionResult Create(CreateItemDto dto)
         {
             var newItem = new ItemDto(Guid.NewGuid(), dto.Name, dto.Description, dto.Price, DateTimeOffset.UtcNow);
             _items.Add(newItem);
@@ -45,6 +45,18 @@ namespace Play.Catalog.Service.Controllers
 
             var index = _items.FindIndex(existItem => existItem.Id == id);
             _items[index] = updatedItem;
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(Guid id)
+        {
+            var existItem = _items.Find(i => i.Id == id);
+            if (existItem == null)
+                return NotFound();
+
+            _items.Remove(existItem);
 
             return NoContent();
         }
