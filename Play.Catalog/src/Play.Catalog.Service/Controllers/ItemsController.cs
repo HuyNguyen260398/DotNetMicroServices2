@@ -16,10 +16,18 @@ namespace Play.Catalog.Service.Controllers
         };
 
         [HttpGet]
-        public IEnumerable<ItemDto> Get() => _items;
+        public IActionResult Get() => Ok(_items);
 
         [HttpGet("{id}")]
-        public ItemDto GetById(Guid id) => _items.Find(i => i.Id == id);
+        public IActionResult GetById(Guid id)
+        {
+            var item = _items.Find(i => i.Id == id);
+
+            if (item is null)
+                return NotFound();
+
+            return Ok(item);
+        }
 
         [HttpPost]
         public IActionResult Create(CreateItemDto dto)
@@ -33,7 +41,7 @@ namespace Play.Catalog.Service.Controllers
         public IActionResult Update(Guid id, UpdateItemDto dto)
         {
             var existItem = _items.Find(i => i.Id == id);
-            if (existItem == null)
+            if (existItem is null)
                 return NotFound();
 
             var updatedItem = existItem with
@@ -53,7 +61,7 @@ namespace Play.Catalog.Service.Controllers
         public IActionResult Delete(Guid id)
         {
             var existItem = _items.Find(i => i.Id == id);
-            if (existItem == null)
+            if (existItem is null)
                 return NotFound();
 
             _items.Remove(existItem);
