@@ -12,14 +12,12 @@ namespace Play.Catalog.Service.Controllers
     [Route("items")]
     public class ItemsController : ControllerBase
     {
-        // private static readonly List<ItemDto> _items = new()
-        // {
-        //     new ItemDto(Guid.NewGuid(), "Item 1", "Description 1", 10.00m, DateTimeOffset.UtcNow),
-        //     new ItemDto(Guid.NewGuid(), "Item 2", "Description 2", 10.00m, DateTimeOffset.UtcNow),
-        //     new ItemDto(Guid.NewGuid(), "Item 3", "Description 3", 10.00m, DateTimeOffset.UtcNow),
-        // };
+        private readonly IItemsRepo _itemsRepo;
 
-        private readonly ItemsRepo _itemsRepo = new();
+        public ItemsController(IItemsRepo itemsRepo)
+        {
+            _itemsRepo = itemsRepo;
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAsync()
