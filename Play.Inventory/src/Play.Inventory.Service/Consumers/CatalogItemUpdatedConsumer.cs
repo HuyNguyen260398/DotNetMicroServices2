@@ -20,7 +20,7 @@ namespace Play.Inventory.Service.Consumers
             var message = context.Message;
             var item = await _repo.GetAsync(message.ItemId);
 
-            if (item != null)
+            if (item == null)
             {
                 item = new CatalogItem
                 {
