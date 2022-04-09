@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Play.Catalog.Service.Entities;
 using Play.Common;
+using PLay.Catalog.Contracts;
 
 namespace Play.Catalog.Service.Controllers
 {
@@ -12,32 +14,17 @@ namespace Play.Catalog.Service.Controllers
     public class ItemsController : ControllerBase
     {
         private readonly IRepository<Item> _itemsRepo;
-        private static int requestCounter = 0;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public ItemsController(IRepository<Item> itemsRepo)
+        public ItemsController(IRepository<Item> itemsRepo, IPublishEndpoint publishEndpoint)
         {
             _itemsRepo = itemsRepo;
+            _publishEndpoint = publishEndpoint;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAsync()
         {
-            requestCounter++;
-            Console.WriteLine($"Request #{requestCounter} starting...");
-
-            if (requestCounter <= 2)
-            {
-                Console.WriteLine($"Request #{requestCounter} delaying...");
-                await Task.Delay(TimeSpan.FromSeconds(10));
-            }
-
-            if (requestCounter <= 4)
-            {
-                Console.WriteLine($"Request #{requestCounter} internal server error 500");
-                return StatusCode(500);
-            }
-
-            Console.WriteLine($"Request #{requestCounter} ok 200");
             return Ok((await _itemsRepo.GetAllAsync()).Select(item => item.AsDto()));
         }
 
@@ -65,6 +52,9 @@ namespace Play.Catalog.Service.Controllers
 
             await _itemsRepo.CreateAsync(item);
 
+            // Send notification to the service bus (RabbitMQ)
+            await _publishEndpoint.Publish(new CatalogItemCreated(item.Id, item.Name, item.Description));
+
             return CreatedAtAction(nameof(GetByIdAsync), new { id = item.Id }, item.AsDto());
         }
 
@@ -82,6 +72,9 @@ namespace Play.Catalog.Service.Controllers
 
             await _itemsRepo.UpdateAsync(item);
 
+            // Send notification to the service bus (RabbitMQ)
+            await _publishEndpoint.Publish(new CatalogItemUpdated(item.Id, item.Name, item.Description));
+
             return NoContent();
         }
 
@@ -94,6 +87,9 @@ namespace Play.Catalog.Service.Controllers
                 return NotFound();
 
             await _itemsRepo.DeleteAsync(item.Id);
+
+            // Send notification to the service bus (RabbitMQ)
+            await _publishEndpoint.Publish(new CatalogItemDeleted(id));
 
             return NoContent();
         }
